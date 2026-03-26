@@ -2,12 +2,12 @@
 
 ## Purpose
 
-`backend/` contains the FastAPI service for the Project Management MVP. It currently serves the statically built frontend at `/` and exposes a health endpoint at `/api/health`. Later phases will add login, persistence, and AI features.
+`backend/` contains the FastAPI service for the Project Management MVP. It currently serves the statically built frontend at `/`, exposes auth and health API routes, and will later add persistence and AI features.
 
 ## Current structure
 
 - `app/main.py`
-  FastAPI app entrypoint with static frontend serving and the health route.
+  FastAPI app entrypoint with static frontend serving plus health and demo-auth routes.
 - `tests/test_app.py`
   Backend smoke tests for `/` and `/api/health`.
 - `pyproject.toml`

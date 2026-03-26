@@ -46,6 +46,9 @@
 - The home page renders a five-column Kanban board.
 - Board state is initialized from static in-memory seed data in `src/lib/kanban.ts`.
 - Users can add a new empty column from the board header.
+- Users can reorder columns using the column drag handle.
+- Users can delete a column from the column header.
+- The app is gated by a simple login screen using the demo credentials.
 - Column titles are editable inline.
 - Cards can be added to a column.
 - Cards can be deleted.
@@ -55,7 +58,6 @@
 ## Known gaps relative to project requirements
 
 - No backend integration yet; all state is client-only.
-- No login or logout flow.
 - No persistence across refreshes.
 - No Docker-aware integration.
 - No AI sidebar or OpenRouter connectivity.

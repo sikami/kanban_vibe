@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import {
   DndContext,
@@ -11,13 +12,26 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
+import { SortableContext, horizontalListSortingStrategy } from "@dnd-kit/sortable";
 import { KanbanColumn } from "@/components/KanbanColumn";
 import { KanbanCardPreview } from "@/components/KanbanCardPreview";
-import { createId, initialData, moveCard, type BoardData } from "@/lib/kanban";
+import { KanbanColumnPreview } from "@/components/KanbanColumnPreview";
+import {
+  createId,
+  initialData,
+  moveCard,
+  moveColumn,
+  type BoardData,
+} from "@/lib/kanban";
 
-export const KanbanBoard = () => {
+type KanbanBoardProps = {
+  headerActions?: ReactNode;
+};
+
+export const KanbanBoard = ({ headerActions }: KanbanBoardProps) => {
   const [board, setBoard] = useState<BoardData>(() => initialData);
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
+  const [activeColumnId, setActiveColumnId] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -28,14 +42,40 @@ export const KanbanBoard = () => {
   const cardsById = useMemo(() => board.cards, [board.cards]);
 
   const handleDragStart = (event: DragStartEvent) => {
-    setActiveCardId(event.active.id as string);
+    const activeId = event.active.id as string;
+    if (activeId.startsWith("col-")) {
+      setActiveColumnId(activeId);
+      setActiveCardId(null);
+      return;
+    }
+
+    setActiveCardId(activeId);
+    setActiveColumnId(null);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveCardId(null);
+    setActiveColumnId(null);
 
     if (!over || active.id === over.id) {
+      return;
+    }
+
+    if ((active.id as string).startsWith("col-")) {
+      setBoard((prev) => ({
+        ...prev,
+        columns: (() => {
+          const overId = over.id as string;
+          const overColumnId =
+            prev.columns.find(
+              (column) =>
+                column.id === overId || column.cardIds.includes(overId)
+            )?.id ?? overId;
+
+          return moveColumn(prev.columns, active.id as string, overColumnId);
+        })(),
+      }));
       return;
     }
 
@@ -107,7 +147,29 @@ export const KanbanBoard = () => {
     });
   };
 
+  const handleDeleteColumn = (columnId: string) => {
+    setBoard((prev) => {
+      const columnToDelete = prev.columns.find((column) => column.id === columnId);
+      if (!columnToDelete) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        columns: prev.columns.filter((column) => column.id !== columnId),
+        cards: Object.fromEntries(
+          Object.entries(prev.cards).filter(
+            ([cardId]) => !columnToDelete.cardIds.includes(cardId)
+          )
+        ),
+      };
+    });
+  };
+
   const activeCard = activeCardId ? cardsById[activeCardId] : null;
+  const activeColumn = activeColumnId
+    ? board.columns.find((column) => column.id === activeColumnId) ?? null
+    : null;
 
   return (
     <div className="relative overflow-hidden">
@@ -138,6 +200,9 @@ export const KanbanBoard = () => {
               </p>
             </div>
           </div>
+          {headerActions ? (
+            <div className="flex justify-end">{headerActions}</div>
+          ) : null}
           <div className="flex flex-wrap items-center gap-4">
             {board.columns.map((column) => (
               <div
@@ -165,23 +230,36 @@ export const KanbanBoard = () => {
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <section
-            className="grid gap-6 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5"
-            data-testid="kanban-columns"
+          <SortableContext
+            items={board.columns.map((column) => column.id)}
+            strategy={horizontalListSortingStrategy}
           >
-            {board.columns.map((column) => (
-              <KanbanColumn
-                key={column.id}
-                column={column}
-                cards={column.cardIds.map((cardId) => board.cards[cardId])}
-                onRename={handleRenameColumn}
-                onAddCard={handleAddCard}
-                onDeleteCard={handleDeleteCard}
-              />
-            ))}
-          </section>
+            <section
+              className="grid gap-6 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5"
+              data-testid="kanban-columns"
+            >
+              {board.columns.map((column) => (
+                <KanbanColumn
+                  key={column.id}
+                  column={column}
+                  cards={column.cardIds.map((cardId) => board.cards[cardId])}
+                  onRename={handleRenameColumn}
+                  onAddCard={handleAddCard}
+                  onDeleteCard={handleDeleteCard}
+                  onDeleteColumn={handleDeleteColumn}
+                />
+              ))}
+            </section>
+          </SortableContext>
           <DragOverlay>
-            {activeCard ? (
+            {activeColumn ? (
+              <div className="w-[280px]">
+                <KanbanColumnPreview
+                  column={activeColumn}
+                  cardCount={activeColumn.cardIds.length}
+                />
+              </div>
+            ) : activeCard ? (
               <div className="w-[260px]">
                 <KanbanCardPreview card={activeCard} />
               </div>

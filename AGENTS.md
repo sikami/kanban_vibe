@@ -6,6 +6,8 @@ This project is building a Project Management App. Key features:
 - A user can sign in
 - When signed in, the user sees a Kanban board representing their project
 - The Kanban board has fixed columns that can be renamed
+- Columns can be moved between columns
+- Columns can be deleted
 - During editing title of the board, when the outside field is clicked, then changes are not saved and title reverts to the previous 
 - The cards on the Kanban board can be moved with drag and drop, and edited
 - There is an add column button that adds a column

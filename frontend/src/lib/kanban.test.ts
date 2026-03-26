@@ -1,4 +1,4 @@
-import { moveCard, type Column } from "@/lib/kanban";
+import { moveCard, moveColumn, type Column } from "@/lib/kanban";
 
 describe("moveCard", () => {
   const baseColumns: Column[] = [
@@ -21,5 +21,27 @@ describe("moveCard", () => {
     const result = moveCard(baseColumns, "card-1", "col-b");
     expect(result[0].cardIds).toEqual(["card-2"]);
     expect(result[1].cardIds).toEqual(["card-3", "card-1"]);
+  });
+});
+
+describe("moveColumn", () => {
+  const baseColumns: Column[] = [
+    { id: "col-a", title: "A", cardIds: ["card-1"] },
+    { id: "col-b", title: "B", cardIds: ["card-2"] },
+    { id: "col-c", title: "C", cardIds: ["card-3"] },
+  ];
+
+  it("reorders columns in the board", () => {
+    const result = moveColumn(baseColumns, "col-a", "col-c");
+    expect(result.map((column) => column.id)).toEqual([
+      "col-b",
+      "col-c",
+      "col-a",
+    ]);
+  });
+
+  it("returns the original columns when ids are invalid", () => {
+    const result = moveColumn(baseColumns, "col-x", "col-c");
+    expect(result).toEqual(baseColumns);
   });
 });

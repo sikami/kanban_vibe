@@ -5,26 +5,28 @@ This plan is the execution checklist for the Project Management MVP in [AGENTS.m
 Assumptions clarified with the user:
 - `/Users/listya/Documents/Belajar/agentic/pm/pm` is the project root.
 - The MVP needs both an `Add column` control that creates a new column and an `Add card` action inside a column that creates a new card.
+- Columns are also expected to be deletable.
+- Columns are also expected to be movable within the board.
 - After plan approval, execution should continue through later phases rather than stopping after docs.
 
-Current starting point:
-- `frontend/` already contains a working Next.js Kanban demo.
-- The current board is fully client-side and uses in-memory state.
-- Unit and Playwright tests already exist for the demo board.
-- Add-column support and its frontend tests have now been added during the frontend integration phase.
-- Backend, Docker wiring, persistence, login flow, and AI integration are not implemented yet.
-- One business-rule gap already identified: the current column rename behavior updates live on each keystroke, but the requirement says clicking outside while editing should discard unsaved changes and revert to the previous title.
+Current state:
+- `frontend/` is integrated into the Docker-served FastAPI app as a static build.
+- The board is still fully client-side and uses in-memory state after login.
+- The app now includes a working fake login/logout flow for the hardcoded user.
+- Unit, component, backend, and Playwright coverage exist for the current scaffold, login flow, and core board interactions.
+- Persistence and AI integration are not implemented yet.
+- One business-rule gap still open: the current column rename behavior updates live on each keystroke, but the requirement says clicking outside while editing should discard unsaved changes and revert to the previous title.
 
 ## Part 1: Plan
 
 Goal: produce an approved execution plan and accurate project documentation before implementation.
 
 Checklist:
-- [ ] Review `AGENTS.md`, `docs/PLAN.md`, and the existing `frontend/` codebase.
-- [ ] Expand this plan into detailed implementation steps with explicit tests and success criteria.
-- [ ] Document the current frontend structure and behavior in `frontend/AGENTS.md`.
-- [ ] Capture known gaps between the current frontend demo and the business requirements.
-- [ ] Pause for user review and approval before implementation.
+- [x] Review `AGENTS.md`, `docs/PLAN.md`, and the existing `frontend/` codebase.
+- [x] Expand this plan into detailed implementation steps with explicit tests and success criteria.
+- [x] Document the current frontend structure and behavior in `frontend/AGENTS.md`.
+- [x] Capture known gaps between the current frontend demo and the business requirements.
+- [x] Pause for user review and approval before implementation.
 
 Tests:
 - Manual review that the plan covers all MVP requirements from `AGENTS.md`.
@@ -39,13 +41,13 @@ Success criteria:
 Goal: establish the containerized app structure, backend skeleton, and local run scripts, with proof that FastAPI can serve both `/` and an API endpoint.
 
 Checklist:
-- [ ] Create a backend app in `backend/` using FastAPI and `uv`.
-- [ ] Add a minimal dependency/config setup for backend development and Docker builds.
-- [ ] Add Docker assets needed to build and run the combined application locally.
-- [ ] Add start/stop scripts for macOS, Linux, and Windows in `scripts/`.
-- [ ] Serve simple example HTML from `/` through FastAPI as an initial integration checkpoint.
-- [ ] Add a simple API route such as `/api/health` returning JSON.
-- [ ] Document how to run the scaffold locally.
+- [x] Create a backend app in `backend/` using FastAPI and `uv`.
+- [x] Add a minimal dependency/config setup for backend development and Docker builds.
+- [x] Add Docker assets needed to build and run the combined application locally.
+- [x] Add start/stop scripts for macOS, Linux, and Windows in `scripts/`.
+- [x] Serve simple example HTML from `/` through FastAPI as an initial integration checkpoint.
+- [x] Add a simple API route such as `/api/health` returning JSON.
+- [x] Document how to run the scaffold locally.
 
 Tests:
 - Backend unit test for the health endpoint.
@@ -64,22 +66,22 @@ Success criteria:
 Goal: replace the placeholder HTML with the existing frontend, built statically and served by the backend.
 
 Checklist:
-- [ ] Integrate the existing `frontend/` app into the combined backend-served setup.
-- [ ] Configure the frontend build output so the backend can serve it at `/`.
-- [ ] Preserve the existing Kanban interactions during the integration, including add column, add card, delete card, rename, and drag/drop.
-- [ ] Ensure required `data-testid` attributes are present across the shipped UI.
-- [ ] Update tests and build scripts for the combined setup.
+- [x] Integrate the existing `frontend/` app into the combined backend-served setup.
+- [x] Configure the frontend build output so the backend can serve it at `/`.
+- [x] Preserve the existing Kanban interactions during the integration, including add column, move column, delete column, add card, delete card, rename, and drag/drop.
+- [x] Ensure required `data-testid` attributes are present across the shipped UI.
+- [x] Update tests and build scripts for the combined setup.
 
 Tests:
 - Frontend unit tests for the board state helpers and core board behavior.
-- Frontend integration/component tests for adding columns, renaming columns, adding cards, deleting cards, and moving cards.
+- Frontend integration/component tests for adding columns, moving columns, deleting columns, renaming columns, adding cards, deleting cards, and moving cards.
 - End-to-end test that `/` loads the Kanban board from the combined app.
 - End-to-end test for add-column behavior.
 - Manual smoke test of the static asset serving path in Docker.
 
 Success criteria:
 - `/` displays the existing Kanban board through the backend-served app.
-- Existing board interactions still work after integration, including creating a new column.
+- Existing board interactions still work after integration, including creating, moving, and deleting columns.
 - Automated frontend test coverage passes in the integrated setup.
 
 ## Part 4: Add in a fake user sign in experience
@@ -87,11 +89,11 @@ Success criteria:
 Goal: gate access to the Kanban board behind a simple local login flow using the fixed MVP credentials.
 
 Checklist:
-- [ ] Define the minimal auth flow for one hardcoded user: username `user`, password `password`.
-- [ ] Add a login screen shown to unauthenticated visitors at `/`.
-- [ ] Add backend session handling or an equally simple local-auth mechanism appropriate for the MVP.
-- [ ] Add logout support.
-- [ ] Keep the implementation compatible with future multi-user persistence.
+- [x] Define the minimal auth flow for one hardcoded user: username `user`, password `password`.
+- [x] Add a login screen shown to unauthenticated visitors at `/`.
+- [x] Add backend session handling or an equally simple local-auth mechanism appropriate for the MVP.
+- [x] Add logout support.
+- [x] Keep the implementation compatible with future multi-user persistence.
 
 Tests:
 - Backend test for successful and failed login attempts.
@@ -150,7 +152,7 @@ Goal: connect the frontend to the backend so board state persists across session
 
 Checklist:
 - [ ] Replace in-memory-only board initialization with API-backed loading.
-- [ ] Persist add-column, rename, add-card, delete-card, and move-card operations through backend calls.
+- [ ] Persist add-column, move-column, delete-column, rename, add-card, delete-card, and move-card operations through backend calls.
 - [ ] Handle loading and error states simply and clearly.
 - [ ] Preserve or improve existing test coverage for the user-visible flows.
 - [ ] Implement the required rename behavior so edits are only committed intentionally and outside-click reverts unsaved changes.
@@ -159,7 +161,7 @@ Tests:
 - Frontend tests for API-backed load and save flows.
 - End-to-end tests for persistence across page reloads.
 - End-to-end or component tests confirming outside-click while editing a column title reverts unsaved changes.
-- Regression tests for adding columns, adding cards, deleting cards, and moving cards with backend persistence.
+- Regression tests for adding columns, moving columns, deleting columns, adding cards, deleting cards, and moving cards with backend persistence.
 
 Success criteria:
 - The board persists after refresh and across login sessions for the same user.

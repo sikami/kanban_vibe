@@ -2,12 +2,13 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { KanbanBoard } from "@/components/KanbanBoard";
 
-const getFirstColumn = () => screen.getAllByTestId(/column-/i)[0];
+const getColumns = () => screen.getAllByTestId(/^column-col-/i);
+const getFirstColumn = () => getColumns()[0];
 
 describe("KanbanBoard", () => {
   it("renders five columns", () => {
     render(<KanbanBoard />);
-    expect(screen.getAllByTestId(/column-/i)).toHaveLength(5);
+    expect(getColumns()).toHaveLength(5);
   });
 
   it("adds a new column with the expected controls", async () => {
@@ -17,7 +18,7 @@ describe("KanbanBoard", () => {
       screen.getByRole("button", { name: /add column/i })
     );
 
-    const columns = screen.getAllByTestId(/column-/i);
+    const columns = getColumns();
     expect(columns).toHaveLength(6);
 
     const newColumn = columns[5];
@@ -37,6 +38,23 @@ describe("KanbanBoard", () => {
     await userEvent.clear(input);
     await userEvent.type(input, "New Name");
     expect(input).toHaveValue("New Name");
+  });
+
+  it("deletes a column and removes its cards", async () => {
+    render(<KanbanBoard />);
+    const firstColumn = getFirstColumn();
+
+    expect(getColumns()).toHaveLength(5);
+    expect(screen.getByText("Align roadmap themes")).toBeInTheDocument();
+
+    await userEvent.click(
+      within(firstColumn).getByRole("button", {
+        name: /delete column backlog/i,
+      })
+    );
+
+    expect(getColumns()).toHaveLength(4);
+    expect(screen.queryByText("Align roadmap themes")).not.toBeInTheDocument();
   });
 
   it("adds and removes a card", async () => {

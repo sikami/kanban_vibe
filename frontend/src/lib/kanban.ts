@@ -161,6 +161,24 @@ export const moveCard = (
   });
 };
 
+export const moveColumn = (
+  columns: Column[],
+  activeId: string,
+  overId: string
+): Column[] => {
+  const oldIndex = columns.findIndex((column) => column.id === activeId);
+  const newIndex = columns.findIndex((column) => column.id === overId);
+
+  if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) {
+    return columns;
+  }
+
+  const nextColumns = [...columns];
+  const [movedColumn] = nextColumns.splice(oldIndex, 1);
+  nextColumns.splice(newIndex, 0, movedColumn);
+  return nextColumns;
+};
+
 export const createId = (prefix: string) => {
   const randomPart = Math.random().toString(36).slice(2, 8);
   const timePart = Date.now().toString(36);

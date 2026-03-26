@@ -11,9 +11,10 @@ Current stack:
 
 Current status:
 - The frontend Kanban board is integrated and served by the FastAPI backend at `/`
-- The board supports renaming columns, adding columns, adding cards, deleting cards, and drag-and-drop
+- The app now requires login with the demo credentials `user` / `password`
+- The board supports renaming columns, adding columns, moving columns, deleting columns, adding cards, deleting cards, and drag-and-drop
 - A health endpoint is available at `/api/health`
-- Login, persistence, and AI features are planned but not implemented yet
+- Persistence and AI features are planned but not implemented yet
 
 ## Project structure
 

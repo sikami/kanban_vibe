@@ -1,18 +1,43 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+
+const login = async (page: Page) => {
+  await page.goto("/");
+  await page.getByLabel("Username").fill("user");
+  await page.getByLabel("Password").fill("password");
+  await page.getByRole("button", { name: /sign in/i }).click();
+  await expect(page.getByRole("heading", { name: "Kanban Studio" })).toBeVisible();
+};
+
+test("requires login and supports logout", async ({ page }) => {
+  await page.goto("/");
+  await expect(
+    page.getByRole("heading", { name: /sign in to your board/i })
+  ).toBeVisible();
+
+  await page.getByLabel("Username").fill("user");
+  await page.getByLabel("Password").fill("password");
+  await page.getByRole("button", { name: /sign in/i }).click();
+
+  await expect(page.getByRole("heading", { name: "Kanban Studio" })).toBeVisible();
+
+  await page.getByTestId("logout-button").click();
+  await expect(
+    page.getByRole("heading", { name: /sign in to your board/i })
+  ).toBeVisible();
+});
 
 test("loads the kanban board", async ({ page }) => {
-  await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Kanban Studio" })).toBeVisible();
-  await expect(page.locator('[data-testid^="column-"]')).toHaveCount(5);
+  await login(page);
+  await expect(page.locator('[data-testid^="column-col-"]')).toHaveCount(5);
 });
 
 test("adds a column with the same core column UI", async ({ page }) => {
-  await page.goto("/");
+  await login(page);
 
-  const existingColumn = page.locator('[data-testid^="column-"]').first();
+  const existingColumn = page.locator('[data-testid^="column-col-"]').first();
   await page.getByRole("button", { name: /add column/i }).click();
 
-  const columns = page.locator('[data-testid^="column-"]');
+  const columns = page.locator('[data-testid^="column-col-"]');
   await expect(columns).toHaveCount(6);
 
   const newColumn = columns.nth(5);
@@ -31,8 +56,8 @@ test("adds a column with the same core column UI", async ({ page }) => {
 });
 
 test("adds a card to a column", async ({ page }) => {
-  await page.goto("/");
-  const firstColumn = page.locator('[data-testid^="column-"]').first();
+  await login(page);
+  const firstColumn = page.locator('[data-testid^="column-col-"]').first();
   await firstColumn.getByRole("button", { name: /add a card/i }).click();
   await firstColumn.getByPlaceholder("Card title").fill("Playwright card");
   await firstColumn.getByPlaceholder("Details").fill("Added via e2e.");
@@ -40,8 +65,61 @@ test("adds a card to a column", async ({ page }) => {
   await expect(firstColumn.getByText("Playwright card")).toBeVisible();
 });
 
+test("deletes a column and its cards", async ({ page }) => {
+  await login(page);
+
+  await expect(page.locator('[data-testid^="column-col-"]')).toHaveCount(5);
+  await expect(page.getByText("Align roadmap themes")).toBeVisible();
+
+  const firstColumn = page.locator('[data-testid^="column-col-"]').first();
+  await firstColumn
+    .getByRole("button", { name: /delete column backlog/i })
+    .click();
+
+  await expect(page.locator('[data-testid^="column-col-"]')).toHaveCount(4);
+  await expect(page.getByText("Align roadmap themes")).toHaveCount(0);
+});
+
+test("moves a column between columns", async ({ page }) => {
+  await login(page);
+
+  const firstColumn = page.getByTestId("column-col-backlog");
+  const targetColumn = page.getByTestId("column-col-progress");
+  const handle = page.getByTestId("column-drag-col-backlog");
+
+  const handleBox = await handle.boundingBox();
+  const targetBox = await targetColumn.boundingBox();
+  if (!handleBox || !targetBox) {
+    throw new Error("Unable to resolve column drag coordinates.");
+  }
+
+  await page.mouse.move(
+    handleBox.x + handleBox.width / 2,
+    handleBox.y + handleBox.height / 2
+  );
+  await page.mouse.down();
+  await page.mouse.move(
+    targetBox.x + targetBox.width / 2,
+    targetBox.y + targetBox.height / 2,
+    { steps: 12 }
+  );
+  await page.mouse.up();
+
+  const columnTitles = await page
+    .locator('[data-testid^="column-col-"] input[aria-label="Column title"]')
+    .evaluateAll((nodes) => nodes.map((node) => (node as HTMLInputElement).value));
+
+  expect(columnTitles).toEqual([
+    "Discovery",
+    "In Progress",
+    "Backlog",
+    "Review",
+    "Done",
+  ]);
+});
+
 test("moves a card between columns", async ({ page }) => {
-  await page.goto("/");
+  await login(page);
   const card = page.getByTestId("card-card-1");
   const targetColumn = page.getByTestId("column-col-review");
   const cardBox = await card.boundingBox();
