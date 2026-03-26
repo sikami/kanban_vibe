@@ -1,0 +1,15 @@
+.git
+.gitignore
+.DS_Store
+.env
+.pytest_cache
+.venv
+backend/.pytest_cache
+backend/__pycache__
+backend/**/__pycache__
+frontend/node_modules
+frontend/.next
+frontend/out
+frontend/test-results
+frontend/playwright-report
+scripts/run

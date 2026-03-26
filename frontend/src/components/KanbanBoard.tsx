@@ -89,6 +89,24 @@ export const KanbanBoard = () => {
     });
   };
 
+  const handleAddColumn = () => {
+    const id = createId("col");
+    setBoard((prev) => {
+      const nextColumnNumber = prev.columns.length + 1;
+      return {
+        ...prev,
+        columns: [
+          ...prev.columns,
+          {
+            id,
+            title: `New Column ${nextColumnNumber}`,
+            cardIds: [],
+          },
+        ],
+      };
+    });
+  };
+
   const activeCard = activeCardId ? cardsById[activeCardId] : null;
 
   return (
@@ -130,6 +148,14 @@ export const KanbanBoard = () => {
                 {column.title}
               </div>
             ))}
+            <button
+              type="button"
+              onClick={handleAddColumn}
+              className="rounded-full border border-dashed border-[var(--primary-blue)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--primary-blue)] transition hover:bg-[var(--primary-blue)] hover:text-white"
+              data-testid="board-add-column"
+            >
+              Add column
+            </button>
           </div>
         </header>
 
@@ -139,7 +165,10 @@ export const KanbanBoard = () => {
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <section className="grid gap-6 lg:grid-cols-5">
+          <section
+            className="grid gap-6 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5"
+            data-testid="kanban-columns"
+          >
             {board.columns.map((column) => (
               <KanbanColumn
                 key={column.id}

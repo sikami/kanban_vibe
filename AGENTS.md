@@ -6,7 +6,11 @@ This project is building a Project Management App. Key features:
 - A user can sign in
 - When signed in, the user sees a Kanban board representing their project
 - The Kanban board has fixed columns that can be renamed
+- During editing title of the board, when the outside field is clicked, then changes are not saved and title reverts to the previous 
 - The cards on the Kanban board can be moved with drag and drop, and edited
+- There is an add column button that adds a column
+- There is an add card action that adds a card inside a column
+- card has to be deletable when x button is clicked
 - There is an AI chat feature in a sidebar; the AI is able to create / edit / move one or more cards
 
 ## Limitations
@@ -27,6 +31,7 @@ For the MVP, this will run locally (in a docker container)
 - Use `openai/gpt-oss-120b` as the model
 - Use SQLLite local database for the database, creating a new db if it doesn't exist
 - Start and Stop server scripts for Mac, PC, Linux in scripts/
+- add data-testid for each component in dom
 
 ## Starting Point
 

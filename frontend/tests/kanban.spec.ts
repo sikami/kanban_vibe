@@ -6,6 +6,30 @@ test("loads the kanban board", async ({ page }) => {
   await expect(page.locator('[data-testid^="column-"]')).toHaveCount(5);
 });
 
+test("adds a column with the same core column UI", async ({ page }) => {
+  await page.goto("/");
+
+  const existingColumn = page.locator('[data-testid^="column-"]').first();
+  await page.getByRole("button", { name: /add column/i }).click();
+
+  const columns = page.locator('[data-testid^="column-"]');
+  await expect(columns).toHaveCount(6);
+
+  const newColumn = columns.nth(5);
+  await expect(newColumn).toBeVisible();
+  await expect(newColumn.getByLabel("Column title")).toHaveValue("New Column 6");
+  await expect(newColumn.getByText(/drop a card here/i)).toBeVisible();
+  await expect(
+    newColumn.getByRole("button", { name: /add a card/i })
+  ).toBeVisible();
+
+  await expect(
+    newColumn.getByRole("button", { name: /add a card/i })
+  ).toHaveText(
+    await existingColumn.getByRole("button", { name: /add a card/i }).textContent()
+  );
+});
+
 test("adds a card to a column", async ({ page }) => {
   await page.goto("/");
   const firstColumn = page.locator('[data-testid^="column-"]').first();

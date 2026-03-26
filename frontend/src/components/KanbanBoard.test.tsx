@@ -10,6 +10,26 @@ describe("KanbanBoard", () => {
     expect(screen.getAllByTestId(/column-/i)).toHaveLength(5);
   });
 
+  it("adds a new column with the expected controls", async () => {
+    render(<KanbanBoard />);
+
+    await userEvent.click(
+      screen.getByRole("button", { name: /add column/i })
+    );
+
+    const columns = screen.getAllByTestId(/column-/i);
+    expect(columns).toHaveLength(6);
+
+    const newColumn = columns[5];
+    expect(within(newColumn).getByLabelText("Column title")).toHaveValue(
+      "New Column 6"
+    );
+    expect(within(newColumn).getByText(/drop a card here/i)).toBeInTheDocument();
+    expect(
+      within(newColumn).getByRole("button", { name: /add a card/i })
+    ).toBeInTheDocument();
+  });
+
   it("renames a column", async () => {
     render(<KanbanBoard />);
     const column = getFirstColumn();
