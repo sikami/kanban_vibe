@@ -40,6 +40,7 @@ The app will be available at:
 
 - `http://localhost:8000/`
 - `http://localhost:8000/api/health`
+- `http://localhost:8000/api/hello`
 
 To stop it:
 
@@ -67,3 +68,6 @@ uv run --project backend pytest backend/tests/test_app.py
 ```
 
 If `uv` is not installed locally, see the backend setup in `backend/pyproject.toml` and use a local virtual environment.
+
+### Big Thanks
+Ed Donner
