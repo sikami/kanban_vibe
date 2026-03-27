@@ -202,12 +202,12 @@ Success criteria:
 Goal: extend AI requests so the backend always sends board JSON plus conversation context and receives structured output with chat text and optional board updates.
 
 Checklist:
-- [ ] Define the structured output schema for AI responses.
-- [ ] Send the current board JSON, user message, and conversation history to the model.
-- [ ] Parse and validate the structured response.
-- [ ] Support responses that include only chat text or chat text plus a board update.
-- [ ] Apply any returned board update safely on the backend side.
-- [ ] Document the request/response contract.
+- [x] Define the structured output schema for AI responses.
+- [x] Send the current board JSON, user message, and conversation history to the model.
+- [x] Parse and validate the structured response.
+- [x] Support responses that include only chat text or chat text plus a board update.
+- [x] Apply any returned board update safely on the backend side.
+- [x] Document the request/response contract.
 
 Tests:
 - Backend unit tests for structured response parsing and validation.

@@ -5,10 +5,11 @@ import sqlite3
 import urllib.error
 import urllib.request
 from pathlib import Path
+from typing import Literal, Optional
 
 from fastapi import FastAPI, HTTPException, Request, Response, status
 from fastapi.responses import FileResponse, JSONResponse
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, ValidationError, model_validator
 
 app = FastAPI(title="Project Management MVP")
 
@@ -85,6 +86,27 @@ class AIConnectivityResponse(BaseModel):
     model: str
     prompt: str
     response: str
+
+
+class AIConversationMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+
+
+class AIChatRequest(BaseModel):
+    message: str
+    conversationHistory: list[AIConversationMessage] = Field(default_factory=list)
+
+
+class AIModelResponse(BaseModel):
+    assistantMessage: str
+    boardUpdate: Optional[BoardModel] = None
+
+
+class AIChatResponse(BaseModel):
+    assistantMessage: str
+    boardUpdated: bool
+    board: Optional[BoardModel] = None
 
 
 DEFAULT_BOARD = BoardModel(
@@ -212,11 +234,11 @@ def extract_openrouter_text(payload: dict[str, object]) -> str:
     raise RuntimeError("OpenRouter response did not include text content.")
 
 
-def call_openrouter(prompt: str) -> str:
+def call_openrouter_messages(messages: list[dict[str, str]]) -> str:
     payload = json.dumps(
         {
             "model": OPENROUTER_MODEL,
-            "messages": [{"role": "user", "content": prompt}],
+            "messages": messages,
         }
     ).encode("utf-8")
     request = urllib.request.Request(
@@ -241,6 +263,66 @@ def call_openrouter(prompt: str) -> str:
         raise RuntimeError(f"OpenRouter request failed: {exc.reason}") from exc
 
     return extract_openrouter_text(response_payload)
+
+
+def call_openrouter(prompt: str) -> str:
+    return call_openrouter_messages([{"role": "user", "content": prompt}])
+
+
+def extract_json_payload(raw_text: str) -> dict[str, object]:
+    stripped = raw_text.strip()
+
+    if stripped.startswith("```"):
+        lines = stripped.splitlines()
+        if lines and lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].strip() == "```":
+            lines = lines[:-1]
+        stripped = "\n".join(lines).strip()
+
+    try:
+        payload = json.loads(stripped)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError("AI response was not valid JSON.") from exc
+
+    if not isinstance(payload, dict):
+        raise RuntimeError("AI response root must be a JSON object.")
+
+    return payload
+
+
+def build_ai_messages(
+    board: BoardModel,
+    conversation_history: list[AIConversationMessage],
+    user_message: str,
+) -> list[dict[str, str]]:
+    system_prompt = (
+        "You are assisting with a kanban board. "
+        "Return only valid JSON with this exact shape: "
+        '{"assistantMessage":"string","boardUpdate":null}. '
+        "If you want to change the board, replace null with a full board object "
+        "matching the provided schema. If no board change is needed, keep "
+        '"boardUpdate" as null.'
+    )
+    board_payload = json.dumps(board.model_dump(), separators=(",", ":"))
+    history_payload = json.dumps(
+        [message.model_dump() for message in conversation_history],
+        separators=(",", ":"),
+    )
+
+    user_payload = (
+        "Current board JSON:\n"
+        f"{board_payload}\n\n"
+        "Conversation history JSON:\n"
+        f"{history_payload}\n\n"
+        "Latest user message:\n"
+        f"{user_message}"
+    )
+
+    return [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_payload},
+    ]
 
 
 def get_db_connection() -> sqlite3.Connection:
@@ -464,6 +546,49 @@ def run_ai_connectivity_check(request: Request) -> AIConnectivityResponse:
         model=OPENROUTER_MODEL,
         prompt=prompt,
         response=ai_response,
+    )
+
+
+@app.post("/api/ai/chat", response_model=AIChatResponse)
+def run_ai_chat(request: Request, payload: AIChatRequest) -> AIChatResponse:
+    username = require_authenticated_user(request)
+    user_id = get_user_id(username)
+    current_board = fetch_board_record(user_id).board
+
+    try:
+        raw_response = call_openrouter_messages(
+            build_ai_messages(
+                current_board,
+                payload.conversationHistory,
+                payload.message,
+            )
+        )
+        parsed_response = AIModelResponse.model_validate(
+            extract_json_payload(raw_response)
+        )
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=str(exc),
+        ) from exc
+    except ValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="AI response did not match the expected schema.",
+        ) from exc
+
+    if parsed_response.boardUpdate is None:
+        return AIChatResponse(
+            assistantMessage=parsed_response.assistantMessage,
+            boardUpdated=False,
+            board=None,
+        )
+
+    save_board_record(user_id, parsed_response.boardUpdate)
+    return AIChatResponse(
+        assistantMessage=parsed_response.assistantMessage,
+        boardUpdated=True,
+        board=parsed_response.boardUpdate,
     )
 
 

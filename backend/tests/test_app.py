@@ -272,3 +272,120 @@ def test_ai_connectivity_check_surfaces_upstream_errors(
     assert response.json() == {
         "detail": "OpenRouter request failed: network unavailable"
     }
+
+
+def test_ai_chat_returns_message_without_board_change(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def fake_call_openrouter_messages(messages):
+        assert len(messages) == 2
+        assert "Current board JSON:" in messages[1]["content"]
+        assert "Conversation history JSON:" in messages[1]["content"]
+        return dumps(
+            {
+                "assistantMessage": "No board update needed.",
+                "boardUpdate": None,
+            }
+        )
+
+    monkeypatch.setattr("app.main.call_openrouter_messages", fake_call_openrouter_messages)
+
+    login(client)
+    response = client.post(
+        "/api/ai/chat",
+        json={
+            "message": "Summarize the board",
+            "conversationHistory": [
+                {"role": "assistant", "content": "Previous reply."}
+            ],
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "assistantMessage": "No board update needed.",
+        "boardUpdated": False,
+        "board": None,
+    }
+
+
+def test_ai_chat_applies_valid_board_update(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    updated_board = DEFAULT_BOARD.model_copy(deep=True)
+    updated_board.cards["card-1"].title = "AI updated card"
+
+    def fake_call_openrouter_messages(messages):
+        return dumps(
+            {
+                "assistantMessage": "I updated the card.",
+                "boardUpdate": updated_board.model_dump(),
+            }
+        )
+
+    monkeypatch.setattr("app.main.call_openrouter_messages", fake_call_openrouter_messages)
+
+    login(client)
+    response = client.post(
+        "/api/ai/chat",
+        json={"message": "Update card 1", "conversationHistory": []},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "assistantMessage": "I updated the card.",
+        "boardUpdated": True,
+        "board": updated_board.model_dump(),
+    }
+
+    get_response = client.get("/api/board")
+    assert get_response.status_code == 200
+    assert get_response.json() == {"board": updated_board.model_dump()}
+
+
+def test_ai_chat_rejects_malformed_model_output(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        "app.main.call_openrouter_messages",
+        lambda messages: "not json",
+    )
+
+    login(client)
+    response = client.post(
+        "/api/ai/chat",
+        json={"message": "Do something", "conversationHistory": []},
+    )
+
+    assert response.status_code == 502
+    assert response.json() == {"detail": "AI response was not valid JSON."}
+
+
+def test_ai_chat_rejects_invalid_board_update_shape(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        "app.main.call_openrouter_messages",
+        lambda messages: dumps(
+            {
+                "assistantMessage": "Bad board payload.",
+                "boardUpdate": {
+                    "columns": [
+                        {"id": "col-1", "title": "Only", "cardIds": ["missing-card"]}
+                    ],
+                    "cards": {},
+                },
+            }
+        ),
+    )
+
+    login(client)
+    response = client.post(
+        "/api/ai/chat",
+        json={"message": "Break the board", "conversationHistory": []},
+    )
+
+    assert response.status_code == 502
+    assert response.json() == {
+        "detail": "AI response did not match the expected schema."
+    }

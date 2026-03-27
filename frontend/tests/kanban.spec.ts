@@ -133,8 +133,9 @@ test("moves a column between columns", async ({ page }) => {
 test("moves a card between columns", async ({ page }) => {
   await login(page);
   const card = page.getByTestId("card-card-1");
+  const handle = page.getByTestId("card-card-1-drag-handle");
   const targetColumn = page.getByTestId("column-col-review");
-  const cardBox = await card.boundingBox();
+  const cardBox = await handle.boundingBox();
   const columnBox = await targetColumn.boundingBox();
   if (!cardBox || !columnBox) {
     throw new Error("Unable to resolve drag coordinates.");

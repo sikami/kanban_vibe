@@ -376,7 +376,7 @@ export const KanbanBoard = ({
             <button
               type="button"
               onClick={handleAddColumn}
-              className="rounded-full border border-dashed border-[var(--primary-blue)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--primary-blue)] transition hover:bg-[var(--primary-blue)] hover:text-white"
+              className="rounded-full border border-dashed border-[var(--primary-blue)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--navy-dark)] transition hover:bg-[var(--primary-blue)] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:rgba(15,111,161,0.18)]"
               data-testid="board-add-column"
             >
               Add column

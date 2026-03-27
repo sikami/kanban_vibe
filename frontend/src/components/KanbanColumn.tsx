@@ -114,18 +114,50 @@ export const KanbanColumn = ({
         </div>
         <button
           type="button"
-          className="rounded-full border border-[var(--stroke)] px-2 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--gray-text)] transition hover:border-[var(--navy-dark)] hover:text-[var(--navy-dark)]"
+          className="rounded-full border border-[var(--stroke)] px-2 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--navy-dark)] transition hover:border-[var(--navy-dark)] hover:bg-[var(--surface)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:rgba(3,33,71,0.14)]"
           aria-label={`Move column ${column.title}`}
           data-testid={`column-drag-${column.id}`}
           {...attributes}
           {...listeners}
         >
-          Move
+          <span className="sr-only">Move</span>
+          {isDragging ? (
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M8 11V7a2 2 0 114 0v4" />
+              <path d="M12 11V6a2 2 0 114 0v5" />
+              <path d="M16 11V8a2 2 0 114 0v7a5 5 0 01-5 5h-4a5 5 0 01-5-5v-3a2 2 0 114 0v1" />
+              <path d="M4 13v-2a2 2 0 114 0v2" />
+            </svg>
+          ) : (
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M7 11V6a2 2 0 114 0v5" />
+              <path d="M11 11V4a2 2 0 114 0v7" />
+              <path d="M15 11V5a2 2 0 114 0v9a6 6 0 01-6 6h-1a6 6 0 01-6-6v-3a2 2 0 114 0v1" />
+            </svg>
+          )}
         </button>
         <button
           type="button"
           onClick={() => onDeleteColumn(column.id)}
-          className="rounded-full border border-transparent px-2 py-1 text-xs font-semibold text-[var(--gray-text)] transition hover:border-[var(--stroke)] hover:text-[var(--navy-dark)]"
+          className="rounded-full border border-transparent px-2 py-1 text-xs font-semibold text-[var(--navy-dark)] transition hover:border-[var(--stroke)] hover:bg-[var(--surface)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:rgba(3,33,71,0.14)]"
           aria-label={`Delete column ${column.title}`}
           data-testid={`column-delete-${column.id}`}
         >
