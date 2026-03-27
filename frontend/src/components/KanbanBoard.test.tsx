@@ -81,4 +81,19 @@ describe("KanbanBoard", () => {
 
     expect(within(column).queryByText("New card")).not.toBeInTheDocument();
   });
+
+  it("keeps dashboard column pills and board titles in sync", async () => {
+    render(<KanbanBoard />);
+
+    const columnTitle = within(getFirstColumn()).getByLabelText("Column title");
+    const pillTitle = screen.getByTestId("dashboard-column-pill-input-col-backlog");
+
+    await userEvent.clear(pillTitle);
+    await userEvent.type(pillTitle, "Ideas");
+    expect(columnTitle).toHaveValue("Ideas");
+
+    await userEvent.clear(columnTitle);
+    await userEvent.type(columnTitle, "Research");
+    expect(pillTitle).toHaveValue("Research");
+  });
 });

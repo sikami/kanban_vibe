@@ -5,10 +5,12 @@ import type { Card } from "@/lib/kanban";
 
 type KanbanCardProps = {
   card: Card;
+  columnId: string;
   onDelete: (cardId: string) => void;
 };
 
-export const KanbanCard = ({ card, onDelete }: KanbanCardProps) => {
+export const KanbanCard = ({ card, columnId, onDelete }: KanbanCardProps) => {
+  const cardTestId = `card-${card.id}`;
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: card.id });
 
@@ -28,14 +30,20 @@ export const KanbanCard = ({ card, onDelete }: KanbanCardProps) => {
       )}
       {...attributes}
       {...listeners}
-      data-testid={`card-${card.id}`}
+      data-testid={cardTestId}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h4 className="font-display text-base font-semibold text-[var(--navy-dark)]">
+      <div className="flex items-start justify-between gap-3" data-testid={`${cardTestId}-header`}>
+        <div data-testid={`${cardTestId}-content`}>
+          <h4
+            className="font-display text-base font-semibold text-[var(--navy-dark)]"
+            data-testid={`${cardTestId}-title`}
+          >
             {card.title}
           </h4>
-          <p className="mt-2 text-sm leading-6 text-[var(--gray-text)]">
+          <p
+            className="mt-2 text-sm leading-6 text-[var(--gray-text)]"
+            data-testid={`${cardTestId}-details`}
+          >
             {card.details}
           </p>
         </div>
@@ -44,6 +52,7 @@ export const KanbanCard = ({ card, onDelete }: KanbanCardProps) => {
           onClick={() => onDelete(card.id)}
           className="rounded-full border border-transparent px-2 py-1 text-xs font-semibold text-[var(--gray-text)] transition hover:border-[var(--stroke)] hover:text-[var(--navy-dark)]"
           aria-label={`Delete ${card.title}`}
+          data-testid={`card-delete-${columnId}-${card.id}`}
         >
           Remove
         </button>

@@ -55,6 +55,33 @@ describe("AppShell", () => {
     expect(screen.getByTestId("logout-button")).toBeInTheDocument();
   });
 
+  it("toggles password visibility on the login form", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ authenticated: false, username: null }),
+    });
+
+    render(<AppShell />);
+
+    const passwordField = await screen.findByTestId("login-password");
+    const toggle = screen.getByTestId("login-password-toggle");
+
+    expect(passwordField).toHaveAttribute("type", "password");
+    expect(toggle).toHaveAttribute("aria-label", "Show password");
+
+    await userEvent.click(toggle);
+
+    expect(passwordField).toHaveAttribute("type", "text");
+    expect(toggle).toHaveAttribute("aria-label", "Hide password");
+    expect(toggle).toHaveAttribute("aria-pressed", "true");
+
+    await userEvent.click(toggle);
+
+    expect(passwordField).toHaveAttribute("type", "password");
+    expect(toggle).toHaveAttribute("aria-label", "Show password");
+    expect(toggle).toHaveAttribute("aria-pressed", "false");
+  });
+
   it("shows an error when login fails", async () => {
     mockFetch
       .mockResolvedValueOnce({
@@ -75,9 +102,17 @@ describe("AppShell", () => {
     await userEvent.type(screen.getByTestId("login-password"), "nope");
     await userEvent.click(screen.getByTestId("login-submit"));
 
-    expect(
-      await screen.findByText("Invalid username or password.")
-    ).toBeInTheDocument();
+    const error = await screen.findByRole("alert");
+
+    expect(error).toHaveTextContent("Invalid username or password.");
+    expect(screen.getByTestId("login-username")).toHaveAttribute(
+      "aria-invalid",
+      "true"
+    );
+    expect(screen.getByTestId("login-password")).toHaveAttribute(
+      "aria-invalid",
+      "true"
+    );
   });
 
   it("logs out after an authenticated session", async () => {

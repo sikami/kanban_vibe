@@ -2,28 +2,27 @@ import { expect, test, type Page } from "@playwright/test";
 
 const login = async (page: Page) => {
   await page.goto("/");
-  await page.getByLabel("Username").fill("user");
-  await page.getByLabel("Password").fill("password");
-  await page.getByRole("button", { name: /sign in/i }).click();
+  await expect(page.getByTestId("login-page")).toBeVisible();
+  await page.getByTestId("login-username").fill("user");
+  await page.getByTestId("login-password").fill("password");
+  await page.getByTestId("login-submit").click();
   await expect(page.getByRole("heading", { name: "Kanban Studio" })).toBeVisible();
 };
 
 test("requires login and supports logout", async ({ page }) => {
   await page.goto("/");
-  await expect(
-    page.getByRole("heading", { name: /sign in to your board/i })
-  ).toBeVisible();
+  await expect(page.getByTestId("login-page")).toBeVisible();
+  await expect(page.getByTestId("login-title")).toHaveText("Sign in to your board");
 
-  await page.getByLabel("Username").fill("user");
-  await page.getByLabel("Password").fill("password");
-  await page.getByRole("button", { name: /sign in/i }).click();
+  await page.getByTestId("login-username").fill("user");
+  await page.getByTestId("login-password").fill("password");
+  await page.getByTestId("login-submit").click();
 
   await expect(page.getByRole("heading", { name: "Kanban Studio" })).toBeVisible();
 
   await page.getByTestId("logout-button").click();
-  await expect(
-    page.getByRole("heading", { name: /sign in to your board/i })
-  ).toBeVisible();
+  await expect(page.getByTestId("login-page")).toBeVisible();
+  await expect(page.getByTestId("login-title")).toHaveText("Sign in to your board");
 });
 
 test("loads the kanban board", async ({ page }) => {

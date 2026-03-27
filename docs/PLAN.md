@@ -17,6 +17,16 @@ Current state:
 - Persistence and AI integration are not implemented yet.
 - One business-rule gap still open: the current column rename behavior updates live on each keystroke, but the requirement says clicking outside while editing should discard unsaved changes and revert to the previous title.
 
+## Next actionable steps
+
+1. Complete Part 5 sign-off using [`docs/DATABASE.md`](/Users/listya/Documents/Belajar/agentic/pm/pm/docs/DATABASE.md).
+2. Build Part 6 backend persistence: SQLite init, demo-user seed, and authenticated board read/write APIs.
+3. Build Part 7 frontend persistence: load board from API, save board mutations, and fix rename-to-revert-on-outside-click behavior.
+4. Verify persistence with backend tests, frontend tests, and reload-based end-to-end coverage.
+5. Build Part 8 connectivity to OpenRouter with `OPENROUTER_API_KEY` and `openai/gpt-oss-120b`.
+6. Build Part 9 structured AI request/response handling with validated optional board updates.
+7. Build Part 10 sidebar chat UI and automatic board refresh after AI-applied changes.
+
 ## Part 1: Plan
 
 Goal: produce an approved execution plan and accurate project documentation before implementation.
@@ -110,10 +120,10 @@ Success criteria:
 Goal: define and document the persistence model for a single-board-per-user MVP using SQLite and JSON board state.
 
 Checklist:
-- [ ] Propose the SQLite schema for users and board storage.
-- [ ] Decide how the Kanban board JSON is stored and versioned.
-- [ ] Document database initialization and migration expectations for the MVP.
-- [ ] Save the database design in `docs/`.
+- [x] Propose the SQLite schema for users and board storage.
+- [x] Decide how the Kanban board JSON is stored and versioned.
+- [x] Document database initialization and migration expectations for the MVP.
+- [x] Save the database design in `docs/`.
 - [ ] Pause for user sign-off before implementing persistence.
 
 Tests:
