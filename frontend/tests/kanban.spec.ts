@@ -64,6 +64,19 @@ test("adds a card to a column", async ({ page }) => {
   await expect(firstColumn.getByText("Playwright card")).toBeVisible();
 });
 
+test("edits a card in a column", async ({ page }) => {
+  await login(page);
+
+  const firstColumn = page.locator('[data-testid^="column-col-"]').first();
+  await firstColumn.getByTestId("card-edit-col-backlog-card-1").click();
+  await firstColumn.getByTestId("card-card-1-edit-title").fill("Edited via e2e");
+  await firstColumn.getByTestId("card-card-1-edit-details").fill("Updated in browser.");
+  await firstColumn.getByTestId("card-card-1-save").click();
+
+  await expect(firstColumn.getByText("Edited via e2e")).toBeVisible();
+  await expect(firstColumn.getByText("Updated in browser.")).toBeVisible();
+});
+
 test("deletes a column and its cards", async ({ page }) => {
   await login(page);
 

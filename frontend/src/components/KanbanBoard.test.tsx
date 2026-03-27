@@ -82,6 +82,27 @@ describe("KanbanBoard", () => {
     expect(within(column).queryByText("New card")).not.toBeInTheDocument();
   });
 
+  it("edits a card", async () => {
+    render(<KanbanBoard />);
+    const column = getFirstColumn();
+
+    await userEvent.click(
+      within(column).getByRole("button", { name: /edit align roadmap themes/i })
+    );
+
+    const titleInput = within(column).getByTestId("card-card-1-edit-title");
+    const detailsInput = within(column).getByTestId("card-card-1-edit-details");
+
+    await userEvent.clear(titleInput);
+    await userEvent.type(titleInput, "Updated card");
+    await userEvent.clear(detailsInput);
+    await userEvent.type(detailsInput, "Updated details");
+    await userEvent.click(within(column).getByTestId("card-card-1-save"));
+
+    expect(within(column).getByText("Updated card")).toBeInTheDocument();
+    expect(within(column).getByText("Updated details")).toBeInTheDocument();
+  });
+
   it("keeps dashboard column pills and board titles in sync", async () => {
     render(<KanbanBoard />);
 

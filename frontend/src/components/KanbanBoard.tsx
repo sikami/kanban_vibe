@@ -194,6 +194,25 @@ export const KanbanBoard = ({
     });
   };
 
+  const handleEditCard = (
+    _columnId: string,
+    cardId: string,
+    title: string,
+    details: string
+  ) => {
+    updateBoard((prev) => ({
+      ...prev,
+      cards: {
+        ...prev.cards,
+        [cardId]: {
+          ...prev.cards[cardId],
+          title,
+          details: details || "No details yet.",
+        },
+      },
+    }));
+  };
+
   const handleAddColumn = () => {
     const id = createId("col");
     updateBoard((prev) => {
@@ -390,6 +409,7 @@ export const KanbanBoard = ({
                   onCommitRename={commitColumnRename}
                   onCancelRename={cancelColumnRename}
                   onAddCard={handleAddCard}
+                  onEditCard={handleEditCard}
                   onDeleteCard={handleDeleteCard}
                   onDeleteColumn={handleDeleteColumn}
                 />

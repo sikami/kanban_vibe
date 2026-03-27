@@ -15,6 +15,7 @@ type KanbanColumnProps = {
   onCommitRename: (columnId: string) => void;
   onCancelRename: () => void;
   onAddCard: (columnId: string, title: string, details: string) => void;
+  onEditCard: (columnId: string, cardId: string, title: string, details: string) => void;
   onDeleteCard: (columnId: string, cardId: string) => void;
   onDeleteColumn: (columnId: string) => void;
 };
@@ -28,6 +29,7 @@ export const KanbanColumn = ({
   onCommitRename,
   onCancelRename,
   onAddCard,
+  onEditCard,
   onDeleteCard,
   onDeleteColumn,
 }: KanbanColumnProps) => {
@@ -137,6 +139,9 @@ export const KanbanColumn = ({
               key={card.id}
               card={card}
               columnId={column.id}
+              onEdit={(cardId, title, details) =>
+                onEditCard(column.id, cardId, title, details)
+              }
               onDelete={(cardId) => onDeleteCard(column.id, cardId)}
             />
           ))}
