@@ -3,15 +3,21 @@
 import { useEffect, useState } from "react";
 import { KanbanBoard } from "@/components/KanbanBoard";
 import { LoginForm } from "@/components/LoginForm";
+import { initialData, type BoardData } from "@/lib/kanban";
 
 type SessionResponse = {
   authenticated: boolean;
   username: string | null;
 };
 
+type BoardResponse = {
+  board: BoardData;
+};
+
 const DEMO_USERNAME = "user";
 const DEMO_PASSWORD = "password";
 const DEMO_SESSION_KEY = "pm_demo_auth";
+const DEMO_BOARD_KEY = "pm_demo_board";
 
 const getJson = async <T,>(input: RequestInfo, init?: RequestInit): Promise<T> => {
   const response = await fetch(input, {
@@ -27,18 +33,54 @@ const getJson = async <T,>(input: RequestInfo, init?: RequestInit): Promise<T> =
     const body = (await response.json().catch(() => null)) as
       | { detail?: string }
       | null;
-    throw new Error(body?.detail ?? "Request failed.");
+    throw new Error(body?.detail ?? "Wrong Username and Password.");
   }
 
   return (await response.json()) as T;
+};
+
+const readStoredBoard = (): BoardData | null => {
+  const rawBoard = window.sessionStorage.getItem(DEMO_BOARD_KEY);
+  if (!rawBoard) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(rawBoard) as BoardData;
+  } catch {
+    window.sessionStorage.removeItem(DEMO_BOARD_KEY);
+    return null;
+  }
+};
+
+const storeBoard = (board: BoardData) => {
+  window.sessionStorage.setItem(DEMO_BOARD_KEY, JSON.stringify(board));
 };
 
 export const AppShell = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
+  const [board, setBoard] = useState<BoardData | null>(null);
+  const [boardNotice, setBoardNotice] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const loadBoard = async () => {
+    try {
+      const response = await getJson<BoardResponse>("/api/board", {
+        method: "GET",
+      });
+      setBoard(response.board);
+      storeBoard(response.board);
+      setBoardNotice(null);
+    } catch {
+      const storedBoard = readStoredBoard() ?? initialData;
+      setBoard(storedBoard);
+      storeBoard(storedBoard);
+      setBoardNotice("Using local board data in this environment.");
+    }
+  };
 
   useEffect(() => {
     const loadSession = async () => {
@@ -48,11 +90,17 @@ export const AppShell = () => {
         });
         setIsAuthenticated(session.authenticated);
         setUsername(session.username);
+        if (session.authenticated) {
+          await loadBoard();
+        }
       } catch {
         const localAuthenticated =
           window.sessionStorage.getItem(DEMO_SESSION_KEY) === "true";
         setIsAuthenticated(localAuthenticated);
         setUsername(localAuthenticated ? DEMO_USERNAME : null);
+        if (localAuthenticated) {
+          await loadBoard();
+        }
       } finally {
         setIsLoading(false);
       }
@@ -75,6 +123,7 @@ export const AppShell = () => {
       });
       setIsAuthenticated(session.authenticated);
       setUsername(session.username);
+      await loadBoard();
     } catch (error) {
       if (
         enteredUsername === DEMO_USERNAME &&
@@ -83,6 +132,7 @@ export const AppShell = () => {
         window.sessionStorage.setItem(DEMO_SESSION_KEY, "true");
         setIsAuthenticated(true);
         setUsername(DEMO_USERNAME);
+        await loadBoard();
       } else {
         setErrorMessage(
           error instanceof Error ? error.message : "Unable to sign in."
@@ -103,18 +153,38 @@ export const AppShell = () => {
       // The frontend-only dev server has no backend session API.
     }
     window.sessionStorage.removeItem(DEMO_SESSION_KEY);
+    window.sessionStorage.removeItem(DEMO_BOARD_KEY);
     setIsAuthenticated(false);
     setUsername(null);
+    setBoard(null);
+    setBoardNotice(null);
   };
 
-  if (isLoading) {
+  const handleBoardChange = async (nextBoard: BoardData) => {
+    setBoard(nextBoard);
+    storeBoard(nextBoard);
+
+    try {
+      const response = await getJson<BoardResponse>("/api/board", {
+        method: "PUT",
+        body: JSON.stringify({ board: nextBoard }),
+      });
+      setBoard(response.board);
+      storeBoard(response.board);
+      setBoardNotice(null);
+    } catch {
+      setBoardNotice("Changes are being kept locally in this environment.");
+    }
+  };
+
+  if (isLoading || (isAuthenticated && !board)) {
     return (
       <main className="flex min-h-screen items-center justify-center px-6">
         <p
           className="text-sm font-semibold uppercase tracking-[0.25em] text-[var(--gray-text)]"
           data-testid="session-loading"
         >
-          Loading session
+          {isAuthenticated ? "Loading board" : "Loading session"}
         </p>
       </main>
     );
@@ -132,6 +202,18 @@ export const AppShell = () => {
 
   return (
     <KanbanBoard
+      board={board ?? initialData}
+      onBoardChange={(nextBoard) => void handleBoardChange(nextBoard)}
+      headerNotice={
+        boardNotice ? (
+          <p
+            className="rounded-2xl border border-[var(--stroke)] bg-white/70 px-4 py-3 text-sm text-[var(--gray-text)]"
+            data-testid="board-notice"
+          >
+            {boardNotice}
+          </p>
+        ) : null
+      }
       headerActions={
         <div className="group relative">
           <button

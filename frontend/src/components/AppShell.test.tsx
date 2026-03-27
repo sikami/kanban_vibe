@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AppShell } from "@/components/AppShell";
+import { initialData } from "@/lib/kanban";
 
 const mockFetch = vi.fn();
 
@@ -38,6 +39,10 @@ describe("AppShell", () => {
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({ authenticated: true, username: "user" }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ board: initialData }),
       });
 
     render(<AppShell />);
@@ -123,6 +128,10 @@ describe("AppShell", () => {
       })
       .mockResolvedValueOnce({
         ok: true,
+        json: async () => ({ board: initialData }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
         json: async () => ({ authenticated: false }),
       });
 
@@ -135,5 +144,30 @@ describe("AppShell", () => {
         screen.getByRole("heading", { name: /sign in to your board/i })
       ).toBeInTheDocument();
     });
+  });
+
+  it("loads the persisted board after an authenticated session", async () => {
+    mockFetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ authenticated: true, username: "user" }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          board: {
+            ...initialData,
+            columns: initialData.columns.map((column, index) =>
+              index === 0 ? { ...column, title: "Research" } : column
+            ),
+          },
+        }),
+      });
+
+    render(<AppShell />);
+
+    expect(
+      await screen.findByTestId("dashboard-column-pill-input-col-backlog")
+    ).toHaveValue("Research");
   });
 });

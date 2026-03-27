@@ -1,3 +1,4 @@
+import type { FocusEvent, KeyboardEvent } from "react";
 import clsx from "clsx";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -8,7 +9,11 @@ import { NewCardForm } from "@/components/NewCardForm";
 type KanbanColumnProps = {
   column: Column;
   cards: Card[];
-  onRename: (columnId: string, title: string) => void;
+  titleValue: string;
+  onStartRename: (columnId: string) => void;
+  onRenameDraftChange: (columnId: string, title: string) => void;
+  onCommitRename: (columnId: string) => void;
+  onCancelRename: () => void;
   onAddCard: (columnId: string, title: string, details: string) => void;
   onDeleteCard: (columnId: string, cardId: string) => void;
   onDeleteColumn: (columnId: string) => void;
@@ -17,7 +22,11 @@ type KanbanColumnProps = {
 export const KanbanColumn = ({
   column,
   cards,
-  onRename,
+  titleValue,
+  onStartRename,
+  onRenameDraftChange,
+  onCommitRename,
+  onCancelRename,
   onAddCard,
   onDeleteCard,
   onDeleteColumn,
@@ -36,6 +45,33 @@ export const KanbanColumn = ({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+  };
+
+  const handleBlur = (event: FocusEvent<HTMLInputElement>) => {
+    const nextTarget = event.relatedTarget;
+    if (
+      nextTarget instanceof HTMLElement &&
+      nextTarget.dataset.columnTitleOwner === column.id
+    ) {
+      return;
+    }
+
+    onCancelRename();
+  };
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      onCommitRename(column.id);
+      event.currentTarget.blur();
+      return;
+    }
+
+    if (event.key === "Escape") {
+      event.preventDefault();
+      onCancelRename();
+      event.currentTarget.blur();
+    }
   };
 
   return (
@@ -63,11 +99,15 @@ export const KanbanColumn = ({
             </span>
           </div>
           <input
-            value={column.title}
-            onChange={(event) => onRename(column.id, event.target.value)}
+            value={titleValue}
+            onFocus={() => onStartRename(column.id)}
+            onChange={(event) => onRenameDraftChange(column.id, event.target.value)}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
             className="mt-3 w-full bg-transparent font-display text-lg font-semibold text-[var(--navy-dark)] outline-none"
             aria-label="Column title"
             data-testid={`column-title-${column.id}`}
+            data-column-title-owner={column.id}
           />
         </div>
         <button

@@ -140,3 +140,32 @@ test("moves a card between columns", async ({ page }) => {
   await page.mouse.up();
   await expect(targetColumn.getByTestId("card-card-1")).toBeVisible();
 });
+
+test("persists board changes across reloads", async ({ page }) => {
+  await login(page);
+
+  await page.getByTestId("board-add-column").click();
+  await expect(page.locator('[data-testid^="column-col-"]')).toHaveCount(6);
+
+  await page.reload();
+
+  const columns = page.locator('[data-testid^="column-col-"]');
+  await expect(columns).toHaveCount(6);
+  await expect(columns.nth(5).getByLabel("Column title")).toHaveValue("New Column 6");
+});
+
+test("reverts unsaved column title edits on outside click", async ({ page }) => {
+  await login(page);
+
+  const columnTitle = page.getByTestId("column-title-col-backlog");
+  await columnTitle.click();
+  await columnTitle.fill("Temporary");
+  await expect(columnTitle).toHaveValue("Temporary");
+
+  await page.getByTestId("board-add-column").click();
+
+  await expect(page.getByTestId("column-title-col-backlog")).toHaveValue("Backlog");
+  await expect(page.getByTestId("dashboard-column-pill-input-col-backlog")).toHaveValue(
+    "Backlog"
+  );
+});

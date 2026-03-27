@@ -124,7 +124,7 @@ Checklist:
 - [x] Decide how the Kanban board JSON is stored and versioned.
 - [x] Document database initialization and migration expectations for the MVP.
 - [x] Save the database design in `docs/`.
-- [ ] Pause for user sign-off before implementing persistence.
+- [x] Pause for user sign-off before implementing persistence.
 
 Tests:
 - Manual design review for schema simplicity, future multi-user support, and compatibility with the MVP scope.
@@ -139,12 +139,12 @@ Success criteria:
 Goal: implement persistent board APIs backed by SQLite, including automatic database creation.
 
 Checklist:
-- [ ] Initialize the SQLite database automatically if it does not exist.
-- [ ] Implement backend data access for users and boards.
-- [ ] Add API routes to fetch the current user's board.
-- [ ] Add API routes to update the current user's board.
-- [ ] Validate request payloads and response models with simple, explicit schemas.
-- [ ] Keep the backend logic narrow and MVP-focused.
+- [x] Initialize the SQLite database automatically if it does not exist.
+- [x] Implement backend data access for users and boards.
+- [x] Add API routes to fetch the current user's board.
+- [x] Add API routes to update the current user's board.
+- [x] Validate request payloads and response models with simple, explicit schemas.
+- [x] Keep the backend logic narrow and MVP-focused.
 
 Tests:
 - Backend unit tests for database initialization.
@@ -161,11 +161,11 @@ Success criteria:
 Goal: connect the frontend to the backend so board state persists across sessions.
 
 Checklist:
-- [ ] Replace in-memory-only board initialization with API-backed loading.
-- [ ] Persist add-column, move-column, delete-column, rename, add-card, delete-card, and move-card operations through backend calls.
-- [ ] Handle loading and error states simply and clearly.
-- [ ] Preserve or improve existing test coverage for the user-visible flows.
-- [ ] Implement the required rename behavior so edits are only committed intentionally and outside-click reverts unsaved changes.
+- [x] Replace in-memory-only board initialization with API-backed loading.
+- [x] Persist add-column, move-column, delete-column, rename, add-card, delete-card, and move-card operations through backend calls.
+- [x] Handle loading and error states simply and clearly.
+- [x] Preserve or improve existing test coverage for the user-visible flows.
+- [x] Implement the required rename behavior so edits are only committed intentionally and outside-click reverts unsaved changes.
 
 Tests:
 - Frontend tests for API-backed load and save flows.
@@ -183,11 +183,11 @@ Success criteria:
 Goal: prove the backend can successfully call OpenRouter using the configured API key and model.
 
 Checklist:
-- [ ] Add backend configuration loading for `OPENROUTER_API_KEY`.
-- [ ] Implement a thin OpenRouter client wrapper.
-- [ ] Use the configured model `openai/gpt-oss-120b`.
-- [ ] Add a simple backend test path or script for an AI connectivity check.
-- [ ] Implement the required simple prompt to validate connectivity.
+- [x] Add backend configuration loading for `OPENROUTER_API_KEY`.
+- [x] Implement a thin OpenRouter client wrapper.
+- [x] Use the configured model `openai/gpt-oss-120b`.
+- [x] Add a simple backend test path or script for an AI connectivity check.
+- [x] Implement the required simple prompt to validate connectivity.
 
 Tests:
 - Manual or automated connectivity test that sends `2+2` and verifies a valid AI response.

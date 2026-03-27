@@ -6,15 +6,16 @@ Current stack:
 - Next.js frontend in `frontend/`
 - FastAPI backend in `backend/`
 - Docker-based local runtime
-- SQLite planned for persistence
-- OpenRouter planned for AI features
+- SQLite persistence
+- OpenRouter connectivity check
 
 Current status:
 - The frontend Kanban board is integrated and served by the FastAPI backend at `/`
 - The app now requires login with the demo credentials `user` / `password`
-- The board supports renaming columns, adding columns, moving columns, deleting columns, adding cards, deleting cards, and drag-and-drop
+- The board supports persisted renaming, adding columns, moving columns, deleting columns, adding cards, deleting cards, and drag-and-drop
 - A health endpoint is available at `/api/health`
-- Persistence and AI features are planned but not implemented yet
+- The backend persists one board per user in SQLite
+- The backend includes an authenticated OpenRouter connectivity check at `/api/ai/connectivity-check`
 
 ## Project structure
 
@@ -69,6 +70,22 @@ uv run --project backend pytest backend/tests/test_app.py
 ```
 
 If `uv` is not installed locally, see the backend setup in `backend/pyproject.toml` and use a local virtual environment.
+
+## AI connectivity check
+
+After starting the app and logging in as `user` / `password`, you can verify OpenRouter connectivity with:
+
+```bash
+curl -X POST http://localhost:8000/api/login \
+  -H "Content-Type: application/json" \
+  -c /tmp/pm-cookies.txt \
+  -d '{"username":"user","password":"password"}'
+
+curl -X POST http://localhost:8000/api/ai/connectivity-check \
+  -b /tmp/pm-cookies.txt
+```
+
+The backend will send the prompt `2+2` to the configured model `openai/gpt-oss-120b`.
 
 ### Big Thanks
 Ed Donner

@@ -1,6 +1,10 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type {
+  FocusEvent,
+  KeyboardEvent,
+  ReactNode,
+} from "react";
 import { useMemo, useState } from "react";
 import {
   DndContext,
@@ -25,13 +29,33 @@ import {
 } from "@/lib/kanban";
 
 type KanbanBoardProps = {
+  board?: BoardData;
+  onBoardChange?: (board: BoardData) => void;
   headerActions?: ReactNode;
+  headerNotice?: ReactNode;
 };
 
-export const KanbanBoard = ({ headerActions }: KanbanBoardProps) => {
-  const [board, setBoard] = useState<BoardData>(() => initialData);
+export const KanbanBoard = ({
+  board: controlledBoard,
+  onBoardChange,
+  headerActions,
+  headerNotice,
+}: KanbanBoardProps) => {
+  const [internalBoard, setInternalBoard] = useState<BoardData>(() => initialData);
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
   const [activeColumnId, setActiveColumnId] = useState<string | null>(null);
+  const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
+  const [columnTitleDraft, setColumnTitleDraft] = useState("");
+
+  const board = controlledBoard ?? internalBoard;
+
+  const updateBoard = (updater: (current: BoardData) => BoardData) => {
+    const nextBoard = updater(board);
+    if (!controlledBoard) {
+      setInternalBoard(nextBoard);
+    }
+    onBoardChange?.(nextBoard);
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -63,7 +87,7 @@ export const KanbanBoard = ({ headerActions }: KanbanBoardProps) => {
     }
 
     if ((active.id as string).startsWith("col-")) {
-      setBoard((prev) => ({
+      updateBoard((prev) => ({
         ...prev,
         columns: (() => {
           const overId = over.id as string;
@@ -79,24 +103,65 @@ export const KanbanBoard = ({ headerActions }: KanbanBoardProps) => {
       return;
     }
 
-    setBoard((prev) => ({
+    updateBoard((prev) => ({
       ...prev,
       columns: moveCard(prev.columns, active.id as string, over.id as string),
     }));
   };
 
-  const handleRenameColumn = (columnId: string, title: string) => {
-    setBoard((prev) => ({
+  const commitColumnRename = (columnId: string) => {
+    const existingColumn = board.columns.find((column) => column.id === columnId);
+    if (!existingColumn) {
+      setEditingColumnId(null);
+      setColumnTitleDraft("");
+      return;
+    }
+
+    const nextTitle = columnTitleDraft.trim();
+    setEditingColumnId(null);
+    setColumnTitleDraft("");
+
+    if (!nextTitle || nextTitle === existingColumn.title) {
+      return;
+    }
+
+    updateBoard((prev) => ({
       ...prev,
       columns: prev.columns.map((column) =>
-        column.id === columnId ? { ...column, title } : column
+        column.id === columnId ? { ...column, title: nextTitle } : column
       ),
     }));
   };
 
+  const startColumnRename = (columnId: string) => {
+    const column = board.columns.find((item) => item.id === columnId);
+    if (!column) {
+      return;
+    }
+
+    if (editingColumnId === columnId) {
+      return;
+    }
+
+    setEditingColumnId(columnId);
+    setColumnTitleDraft(column.title);
+  };
+
+  const updateColumnTitleDraft = (columnId: string, title: string) => {
+    if (editingColumnId !== columnId) {
+      startColumnRename(columnId);
+    }
+    setColumnTitleDraft(title);
+  };
+
+  const cancelColumnRename = () => {
+    setEditingColumnId(null);
+    setColumnTitleDraft("");
+  };
+
   const handleAddCard = (columnId: string, title: string, details: string) => {
     const id = createId("card");
-    setBoard((prev) => ({
+    updateBoard((prev) => ({
       ...prev,
       cards: {
         ...prev.cards,
@@ -111,7 +176,7 @@ export const KanbanBoard = ({ headerActions }: KanbanBoardProps) => {
   };
 
   const handleDeleteCard = (columnId: string, cardId: string) => {
-    setBoard((prev) => {
+    updateBoard((prev) => {
       return {
         ...prev,
         cards: Object.fromEntries(
@@ -131,7 +196,7 @@ export const KanbanBoard = ({ headerActions }: KanbanBoardProps) => {
 
   const handleAddColumn = () => {
     const id = createId("col");
-    setBoard((prev) => {
+    updateBoard((prev) => {
       const nextColumnNumber = prev.columns.length + 1;
       return {
         ...prev,
@@ -148,7 +213,7 @@ export const KanbanBoard = ({ headerActions }: KanbanBoardProps) => {
   };
 
   const handleDeleteColumn = (columnId: string) => {
-    setBoard((prev) => {
+    updateBoard((prev) => {
       const columnToDelete = prev.columns.find((column) => column.id === columnId);
       if (!columnToDelete) {
         return prev;
@@ -170,6 +235,39 @@ export const KanbanBoard = ({ headerActions }: KanbanBoardProps) => {
   const activeColumn = activeColumnId
     ? board.columns.find((column) => column.id === activeColumnId) ?? null
     : null;
+
+  const getColumnTitleValue = (columnId: string, currentTitle: string) =>
+    editingColumnId === columnId ? columnTitleDraft : currentTitle;
+
+  const handlePillBlur = (columnId: string, event: FocusEvent<HTMLInputElement>) => {
+    const nextTarget = event.relatedTarget;
+    if (
+      nextTarget instanceof HTMLElement &&
+      nextTarget.dataset.columnTitleOwner === columnId
+    ) {
+      return;
+    }
+
+    cancelColumnRename();
+  };
+
+  const handlePillKeyDown = (
+    columnId: string,
+    event: KeyboardEvent<HTMLInputElement>
+  ) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      commitColumnRename(columnId);
+      event.currentTarget.blur();
+      return;
+    }
+
+    if (event.key === "Escape") {
+      event.preventDefault();
+      cancelColumnRename();
+      event.currentTarget.blur();
+    }
+  };
 
   return (
     <div className="relative overflow-hidden" data-testid="dashboard-page">
@@ -224,6 +322,9 @@ export const KanbanBoard = ({ headerActions }: KanbanBoardProps) => {
               </p>
             </div>
           </div>
+          {headerNotice ? (
+            <div data-testid="dashboard-header-notice">{headerNotice}</div>
+          ) : null}
           <div
             className="flex flex-wrap items-center gap-4"
             data-testid="dashboard-column-pills"
@@ -239,11 +340,17 @@ export const KanbanBoard = ({ headerActions }: KanbanBoardProps) => {
                   data-testid={`dashboard-column-pill-dot-${column.id}`}
                 />
                 <input
-                  value={column.title}
-                  onChange={(event) => handleRenameColumn(column.id, event.target.value)}
+                  value={getColumnTitleValue(column.id, column.title)}
+                  onFocus={() => startColumnRename(column.id)}
+                  onChange={(event) =>
+                    updateColumnTitleDraft(column.id, event.target.value)
+                  }
+                  onBlur={(event) => handlePillBlur(column.id, event)}
+                  onKeyDown={(event) => handlePillKeyDown(column.id, event)}
                   className="min-w-0 bg-transparent text-xs font-semibold uppercase tracking-[0.2em] text-[var(--navy-dark)] outline-none"
                   aria-label={`Dashboard column pill title ${column.title}`}
                   data-testid={`dashboard-column-pill-input-${column.id}`}
+                  data-column-title-owner={column.id}
                 />
               </div>
             ))}
@@ -277,7 +384,11 @@ export const KanbanBoard = ({ headerActions }: KanbanBoardProps) => {
                   key={column.id}
                   column={column}
                   cards={column.cardIds.map((cardId) => board.cards[cardId])}
-                  onRename={handleRenameColumn}
+                  titleValue={getColumnTitleValue(column.id, column.title)}
+                  onStartRename={startColumnRename}
+                  onRenameDraftChange={updateColumnTitleDraft}
+                  onCommitRename={commitColumnRename}
+                  onCancelRename={cancelColumnRename}
                   onAddCard={handleAddCard}
                   onDeleteCard={handleDeleteCard}
                   onDeleteColumn={handleDeleteColumn}

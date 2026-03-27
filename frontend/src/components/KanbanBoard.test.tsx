@@ -96,4 +96,22 @@ describe("KanbanBoard", () => {
     await userEvent.type(columnTitle, "Research");
     expect(pillTitle).toHaveValue("Research");
   });
+
+  it("reverts unsaved rename changes on outside click", async () => {
+    render(<KanbanBoard />);
+
+    const column = getFirstColumn();
+    const input = within(column).getByLabelText("Column title");
+
+    await userEvent.clear(input);
+    await userEvent.type(input, "Temporary");
+    expect(input).toHaveValue("Temporary");
+
+    await userEvent.click(screen.getByTestId("board-add-column"));
+
+    expect(input).toHaveValue("Backlog");
+    expect(screen.getByTestId("dashboard-column-pill-input-col-backlog")).toHaveValue(
+      "Backlog"
+    );
+  });
 });
